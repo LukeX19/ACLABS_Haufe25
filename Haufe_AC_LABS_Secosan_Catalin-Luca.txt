@@ -1,0 +1,174 @@
+Secosan Catalin-Luca
+Software Engineering Master's Degree - Year 2
+
+Haufe Group Test (Thursday 13.03.2025 - 12:00 PM)
+
+
+
+
+Part 1 - Web APP Idea Overview
+
+1.1 - Main Idea:
+I would like someday to implement a community based platform to help people retrieve lost items easily. A web based solution would be fitting, offering people a platform where they can report lost or found items and using AI-powered image recognition and/or location-based matching, users could get notified when there is a match of one of their lost item.
+
+1.2 - Problem Definition:
+People often lose valuable items (such as keys, wallets, phones, etc.), and it is difficult to find lost belongings by simply searching some places or asking others. Therefore, this would make an universal way to reconnect lost items with owners, effortless.
+
+1.3 - Proposed solution:
+Key functionalities/Use Cases:
+- Users login/register on this app with their email and a password, for free. (But at account creation they will provide some basic information such as phone number, address, 
+- Users upload lost or found items, providing a picture and a description with many concrete details regarding the item (in order to boost the chances of matching the item).
+- AI component would match a lost item with the reported found items, to try and predict the owner. AI could use image recognition to match the item image and description's text separately, providing confidence scores (one for image and one for description).
+- Users get notified when an item with a confidence of over 70% is found (the value is just an example).
+- Maybe remove/update items or remove/update user account.
+
+1.4 - High-Level Technic Approach:
+Since my current experience and skills include ASP.NET Core, React.js, SQL, if I were to start and implement this app now, I would use:
+- Back-End: ASP.NET Core 8 (latest LTS version at the moment of writing this document) framework (for C#) + Entity Framework ORM and other NuGet packages.
+- Database: Microsoft SQL Server or PostgreSQL for a relational database.
+- Front-End: React.js with Vite (for enhancements) and TypeScript (for type checking), Material UI library for components with HTML and CSS for styling. Also, other npm packages, such as yup for form validations, toastify for successful and general error request responses (but for error, I would hide details).
+- AI component: most probably a third-party API such as OpenAI API/LLama from Meta, DeepSeek, etc. Or a custom-made python component with libraries such as Keras, OpenCV, etc. (the problem is I don't know python yet 😀).
+- Cloud services (for app deployment and image storage), such as: Amazon AWS or Microsoft Azure.
+- AUTH with JWT Tokens.
+
+For the main components, I made the following diagram:
+---------------       -------------------------       ------------------       ----------------------------------------
+|  React UI   | <-->  |  ASP.NET Core API     | <-->  |      SQL       | <-->  |            Cloud Storage             |
+|     (FE)    |       |         (BE)          |       |      (DB)      |       |     (AWS S3 or Azure Blob Storage)   |
+---------------       -------------------------       ------------------       ----------------------------------------
+                                    |
+                                    v
+                          -------------------
+                          |   AI Matching   |
+                          |                 |
+                          -------------------
+
+1.5 - Extras:
+* The core idea is a general one, but it can be extracted into more concrete real-world scenarios, for example:
+	- public spaces (airports, parks, events).
+	- public events such as concerts, expositions, etc.
+	- corporations or institutions: to be used internally, by their employees.
+	- gyms
+	- schools, since children tend to lose items more often.
+	- find lost pets in a city.
+	- many more.
+
+* This application can be expanded in the future with Firebase or AWS Lambda for events in order to notify real-time the users via email and call the API automatically to scan for items whenever an item is posted.
+
+* I would also explore the possibility of using a NoSQL DB for an increased flexibility in data structure and data modelling. (But due to my main skills and experience in only SQL databases at the moment of writing this, I chose SQL).
+
+
+
+Part 2 - Coding challenge
+
+Task B:
+
+I tried to make a high-level pseudocode for the most important usecases of this application:
+
+DEFINE API_SERVICE:
+
+  SET DATABASE as SQLProvider
+  SET STORAGE_SERVICE as CloudService
+  SET AI_SERVICE as external API (for image & text matching)
+
+  FUNCTION AuthenticateUser(username, password):
+      user = FIND user IN DATABASE WHERE username = username
+      IF user exists AND password is correct THEN
+          RETURN GenerateJWTToken(user)
+      ELSE
+          RETURN "Invalid credentials"
+
+  FUNCTION RegisterUser(username, email, password):
+      IF username OR email already exists IN DATABASE THEN
+          RETURN "User already exists"
+      ELSE
+          SAVE user TO DATABASE
+          RETURN "Registration successful"
+
+  FUNCTION ReportLostItem(user_token, description, image):
+      VERIFY user_token (JWT)
+      IF user_token is INVALID THEN
+          RETURN "Unauthorized"
+
+      image_url = UPLOAD image TO STORAGE_SERVICE
+      lost_item = CREATE NEW LostItem(description, image_url, current_date, user_id)
+      SAVE lost_item TO DATABASE
+
+      RETURN "Lost item reported successfully"
+
+  FUNCTION ReportFoundItem(user_token, description, image):
+      VERIFY user_token (JWT)
+      IF user_token is INVALID THEN
+          RETURN "Unauthorized"
+
+      image_url = UPLOAD image TO STORAGE_SERVICE
+      found_item = CREATE NEW FoundItem(description, image_url, current_date, user_id)
+      SAVE found_item TO DATABASE
+
+      RETURN "Found item reported successfully"
+
+  FUNCTION GetMatches():
+      lost_items = FETCH ALL FROM DATABASE WHERE status = "lost"
+      found_items = FETCH ALL FROM DATABASE WHERE status = "found"
+      matches = []
+
+      FOR EACH lost_item IN lost_items:
+          FOR EACH found_item IN found_items:
+              image_score = AI_SERVICE.MatchImages(lost_item.image_url, found_item.image_url)
+              text_score = AI_SERVICE.MatchText(lost_item.description, found_item.description)
+              
+              final_score = (image_score + text_score) / 2
+
+              IF final_score > 0.7 THEN
+                  ADD {lost_item, found_item, confidence_score: final_score} TO matches
+
+      RETURN matches
+
+  FUNCTION SendNotification(user_id, match_info):
+      user = FETCH user FROM DATABASE WHERE user_id = user_id
+      notification_message = "Possible match found for your lost item: " + match_info
+      SEND notification_message TO user.email
+
+      RETURN "Notification sent successfully"
+
+  FUNCTION Main():
+      REGISTER ENDPOINT "/api/auth/register" TO RegisterUser
+      REGISTER ENDPOINT "/api/auth/login" TO AuthenticateUser
+      REGISTER ENDPOINT "/api/lost" TO ReportLostItem
+      REGISTER ENDPOINT "/api/found" TO ReportFoundItem
+      REGISTER ENDPOINT "/api/match" TO GetMatches
+      REGISTER ENDPOINT "/api/notify" TO SendNotification
+      START_API
+
+Initial models for items could look like this, in C#:
+- Enum for item status:
+// internally they are stored as integers, so we will have Lost = 0 and Found = 1
+public enum StatusType {
+      Lost,
+      Found
+}
+
+- Items (either one table with a status field or two separate tables for found items and lost items):
+// either string or long or Guid types for Ids
+public string Id { get; set; }
+public string Description { get; set; }
+public string ImageUrl { get; set; }
+public string Location { get; set; }
+public DateTime DateLost { get; set; }
+public StatusType Status { get; set; }
+
+- Matching Result:
+public LostItem LostItem { get; set; }
+public FoundItem FoundItem { get; set; }
+public double ConfidenceScore { get; set; }
+
+.NET Back-End architecture:
+CLEAN architecture with 4 layers: API, App, Infrastructure and Domain + CQRS approach to segregate commands from queries.
+Domain will have models, Infrastructure will contain repositories for basic CRUD operations, App layer will represent the business logic with the concrete implementations of all use cases and API layer will be the entry point in the Back-End and will register services via Dependency Injection and will also contain other configuration and controllers for endpoints implementation and routing.
+Other techniques or design patterns used: DTOs for layers to communicate and a mediator to call appropriate handlers for controller endpoints.
+
+Task C:
+I would use ORM and a SQL DB, with one table for user accounts, one table for items and a third possible table for matches (not yet sure if result will just be returned to FE or stored in DB).
+All tables will have Ids and maybe timestamp fields such as "CreatedAt" or "UpdatedAt".
+
+
