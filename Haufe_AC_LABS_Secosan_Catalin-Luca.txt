@@ -32,16 +32,22 @@ Since my current experience and skills include ASP.NET Core, React.js, SQL, if I
 - AUTH with JWT Tokens.
 
 For the main components, I made the following diagram:
----------------       -------------------------       ------------------       ----------------------------------------
-|  React UI   | <-->  |  ASP.NET Core API     | <-->  |      SQL       | <-->  |            Cloud Storage             |
-|     (FE)    |       |         (BE)          |       |      (DB)      |       |     (AWS S3 or Azure Blob Storage)   |
----------------       -------------------------       ------------------       ----------------------------------------
-                                    |
-                                    v
-                          -------------------
-                          |   AI Matching   |
-                          |                 |
-                          -------------------
+             ----------------------------------------
+             |            Cloud Storage             |
+             |     (AWS S3 or Azure Blob Storage)   |
+             ----------------------------------------
+                                 ^
+                                 |
+---------------       -------------------------       ------------------
+|  React UI   | <-->  |  ASP.NET Core API     | <-->  |      SQL       |
+|     (FE)    |       |         (BE)          |       |      (DB)      |
+---------------       -------------------------       ------------------
+                                 |
+                                 v
+                         -------------------
+                         |   AI Matching   |
+                         |                 |
+                         -------------------
 
 1.5 - Extras:
 * The core idea is a general one, but it can be extracted into more concrete real-world scenarios, for example:
